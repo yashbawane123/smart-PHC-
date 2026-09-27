@@ -11,6 +11,7 @@ import AttendanceScreen from './components/AttendanceScreen';
 import AdminDashboard from './components/AdminDashboard';
 import AnalyticsCharts from './components/AnalyticsCharts';
 import FloatingDock from './components/FloatingDock';
+import PHCSaathiAssistant from './components/PHCSaathiAssistant';
 import { Globe } from 'lucide-react';
 
 export default function App() {
@@ -157,6 +158,12 @@ export default function App() {
           activeModule={activeModule}
           setActiveModule={setActiveModule}
           setRole={setRole}
+        />
+
+        {/* PHC Saathi Voice-First Assistant */}
+        <PHCSaathiAssistant
+          lang={lang}
+          onNavigate={(mod) => setActiveModule(mod)}
         />
       </div>
     </div>

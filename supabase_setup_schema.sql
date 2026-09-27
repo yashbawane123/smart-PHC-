@@ -96,6 +96,16 @@ create table if not exists alerts (
   created_at timestamptz not null default now()
 );
 
+create table if not exists chat_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id),
+  phc_id uuid references phcs(id),
+  intent text not null,
+  input_text text,
+  response_key text,
+  created_at timestamptz not null default now()
+);
+
 -- 4. Atomic Counter RPC Functions
 create or replace function increment_stock(p_medicine_id uuid, p_delta int, p_reason text, p_user uuid)
 returns int language plpgsql security definer set search_path = public as $$

@@ -13,11 +13,12 @@ db.version(1).stores({
   doctors: 'id, phc_id, full_name, department_id, is_active',
   doctor_attendance: 'id, doctor_id, attendance_date, session, status, marked_by, marked_at, synced',
   alerts: 'id, phc_id, type, medicine_id, status, created_at',
-  sync_queue: '++id, table_name, action, payload, created_at'
+  sync_queue: '++id, table_name, action, payload, created_at',
+  chat_logs: 'id, user_id, phc_id, intent, input_text, response_key, created_at'
 });
 
 export const DEFAULT_PHC_ID = 'phc-001-maharashtra';
-export const WORKER_PROFILE_ID = 'user-kamla-01';
+export const WORKER_PROFILE_ID = 'user-modi-01';
 export const ADMIN_PROFILE_ID = 'user-sandeep-admin';
 
 export async function seedInitialData() {
@@ -36,7 +37,7 @@ export async function seedInitialData() {
         id: WORKER_PROFILE_ID,
         phc_id: DEFAULT_PHC_ID,
         role: 'worker',
-        full_name: 'Kamla Pawar',
+        full_name: 'modi melone',
         preferred_language: 'hi'
       },
       {
