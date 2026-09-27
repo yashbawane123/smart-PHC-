@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Pill, Footprints, UserCheck, ShieldAlert, Globe, Sun, Moon, Wifi, WifiOff, Volume2 } from 'lucide-react';
+import { Home, Pill, Footprints, UserCheck, ShieldAlert, Globe, Sun, Moon, Wifi, WifiOff, Volume2, MessageSquare } from 'lucide-react';
 import { speakText, triggerHaptic } from '../utils/audioEngine';
 
 export default function Sidebar({
@@ -86,6 +86,15 @@ export default function Sidebar({
         >
           <UserCheck size={22} />
           <span>🩺 {lang === 'mr' ? 'डॉक्टर हजेरी' : lang === 'hi' ? 'डॉक्टर उपस्थिति' : 'Doctor Attendance'}</span>
+        </button>
+
+        <button
+          className={`sidebar-nav-btn ${activeModule === 'chat' ? 'active' : ''}`}
+          style={{ borderColor: activeModule === 'chat' ? '#0d9488' : 'transparent' }}
+          onClick={() => handleNavClick('chat', 'PHC साथी चैट')}
+        >
+          <MessageSquare size={22} color="#0d9488" />
+          <span>💬 {lang === 'mr' ? 'PHC साथी (चॅट)' : lang === 'hi' ? 'PHC साथी (चैट)' : 'PHC Saathi Chat'}</span>
         </button>
 
         <div className="nav-section-title" style={{ marginTop: '16px' }}>MANAGEMENT</div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pill, UserCheck, Footprints, AlertTriangle, ChevronRight, Volume2 } from 'lucide-react';
+import { Pill, UserCheck, Footprints, AlertTriangle, ChevronRight, Volume2, MessageSquare } from 'lucide-react';
 import { db } from '../db/offlineDb';
 import { speakText, VOICE_DICTIONARY, triggerHaptic } from '../utils/audioEngine';
 
@@ -131,6 +131,23 @@ export default function WorkerHome({ lang, onSelectModule }) {
           <p>{lang === 'mr' ? 'हजर / गैरहजर नोंदवा' : lang === 'hi' ? 'उपस्थित / अनुपस्थित दर्ज करें' : 'Mark Present / Absent'}</p>
         </div>
         <ChevronRight size={32} color="var(--color-warning)" />
+      </div>
+
+      {/* Module 4: PHC Saathi Chat & Voice Assistant */}
+      <div
+        className="module-tile chat"
+        style={{ borderLeft: '8px solid #0d9488' }}
+        onClick={() => handleTileClick('chat', 'saathi_assistant')}
+        onContextMenu={(e) => { e.preventDefault(); handleLongPressSpeech('saathi_assistant'); }}
+      >
+        <div className="module-icon-box" style={{ background: '#e6fffa', color: '#0d9488' }}>
+          <MessageSquare size={48} />
+        </div>
+        <div className="module-info">
+          <h2>💬 {lang === 'mr' ? 'PHC साथी (व्हॉइस/चॅट)' : lang === 'hi' ? 'PHC साथी (वॉयस/चैट)' : 'PHC Saathi (Voice/Chat)'}</h2>
+          <p>{lang === 'mr' ? 'बोलून काम करा किंवा चॅट करा' : lang === 'hi' ? 'बोलकर काम करें या चैट करें' : 'Speak or tap quick chips'}</p>
+        </div>
+        <ChevronRight size={32} color="#0d9488" />
       </div>
     </div>
   );

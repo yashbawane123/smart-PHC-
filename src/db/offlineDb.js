@@ -14,7 +14,9 @@ db.version(1).stores({
   doctor_attendance: 'id, doctor_id, attendance_date, session, status, marked_by, marked_at, synced',
   alerts: 'id, phc_id, type, medicine_id, status, created_at',
   sync_queue: '++id, table_name, action, payload, created_at',
-  chat_logs: 'id, user_id, phc_id, intent, input_text, response_key, created_at'
+  chat_logs: 'id, user_id, phc_id, intent, input_text, response_key, created_at',
+  chat_sessions: 'id, phc_id, user_id, channel, created_at',
+  chat_messages: 'id, session_id, sender_role, input_mode, intent, text_body, response_key, picture_url, created_at'
 });
 
 export const DEFAULT_PHC_ID = 'phc-001-maharashtra';

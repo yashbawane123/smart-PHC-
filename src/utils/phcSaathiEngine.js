@@ -1,4 +1,4 @@
-// PHC Saathi — Intent Engine & Pre-Approved Response Dictionary
+// PHC Saathi — Hybrid Chat & Voice Assistant Intent Engine
 
 import { db, DEFAULT_PHC_ID } from '../db/offlineDb';
 
@@ -11,7 +11,7 @@ export const SAATHI_RESPONSES = {
     action_cancelled: "कार्य रद्द कर दिया गया।",
     saved_success: "जानकारी दर्ज कर दी गई है।",
     help_guide: "स्मार्ट पीएचसी साथी में आपका स्वागत है। दवा स्टॉक गिनने के लिए दवा का नाम बोलें, या मरीज संख्या दर्ज करने के लिए विभाग बोलें।",
-    escalated: "आपकी सूचना एडमिन को भेज दी गई है।",
+    escalated: "आपकी बात डॉक्टर साहब (Admin) को भेज दी गई है।",
     alert_explain_low: "यह दवाई का स्टॉक सीमा से कम हो गया है। कृपया अपने सुपरवाइजर को तुरंत रीऑर्डर के लिए सूचित करें।",
     alert_explain_expiry: "यह दवा जल्द ही एक्सपायर होने वाली है। पहले इस्तेमाल करें।"
   },
@@ -22,7 +22,7 @@ export const SAATHI_RESPONSES = {
     action_cancelled: "कृती रद्द केली.",
     saved_success: "माहिती यशस्वीरित्या नोंदवली गेली.",
     help_guide: "स्मार्ट पीएचसी साथी मध्ये आपले स्वागत आहे. औषध मोजण्यासाठी औषधाचे नाव बोला, किंवा रुग्ण मोजण्यासाठी विभाग बोला.",
-    escalated: "आपली माहिती ॲडमिनकडे पाठवली आहे.",
+    escalated: "आपली माहिती डॉ. साहेबांकडे पाठवली आहे.",
     alert_explain_low: "या औषधाचा साठा कमी झाला आहे. कृपया पर्यवेक्षकांना लगेच नवीन ऑर्डर देण्यास सांगा.",
     alert_explain_expiry: "हे औषध लवकरच एक्सपायर होणार आहे. आधी वापरा."
   },
@@ -33,7 +33,7 @@ export const SAATHI_RESPONSES = {
     action_cancelled: "Action cancelled.",
     saved_success: "Information recorded successfully.",
     help_guide: "Welcome to PHC Saathi. Speak medicine name to count stock, or department for footfall.",
-    escalated: "Issue escalated to admin.",
+    escalated: "Message forwarded to Medical Officer Admin.",
     alert_explain_low: "Stock is below threshold. Please inform your supervisor to reorder immediately.",
     alert_explain_expiry: "Medicine expiring soon. Use existing batch first."
   }
@@ -41,7 +41,7 @@ export const SAATHI_RESPONSES = {
 
 // Emergency & Medical Keywords for Safety Guardrail
 const EMERGENCY_KEYWORDS = [
-  'chest pain', 'bleeding', 'blood', 'heart', 'pregnant', 'accident', 'emergency',
+  'chest pain', 'bleeding', 'blood', 'heart', 'pregnant', 'emergency', 'saans',
   'दर्द', 'खून', 'सीने', 'गर्भवती', 'आपत्कालीन', 'दुर्घटना',
   'छातीत दुखणे', 'रक्तस्त्राव', 'अपघात'
 ];
@@ -52,8 +52,52 @@ const MEDICAL_TREATMENT_KEYWORDS = [
   'औषध कशासाठी', 'औषधाचा डोस'
 ];
 
+// Quick-Reply Chips Factory (Max 3 words + Icon)
+export function getQuickReplyChips(lang = 'hi', contextState = 'default') {
+  if (lang === 'mr') {
+    return [
+      { id: 'stock_check', icon: '📦', text: 'साठा पहा', intentQuery: 'Paracetamol साठा किती आहे?' },
+      { id: 'patient_add', icon: '🚶', text: 'रुग्ण जोडा', intentQuery: 'OPD मध्ये १ नवीन रुग्ण आला' },
+      { id: 'alert_help', icon: '⚠️', text: 'काय करावे?', intentQuery: 'कमी साठा कसा दुरुस्त करावा?' },
+      { id: 'chat_admin', icon: '💬', text: 'डॉक्टरांना विचारा', intentQuery: 'डॉक्टर साहेबांना मेसेज पाठवा' }
+    ];
+  }
+
+  if (lang === 'en') {
+    return [
+      { id: 'stock_check', icon: '📦', text: 'Check Stock', intentQuery: 'How much Paracetamol left?' },
+      { id: 'patient_add', icon: '🚶', text: 'Add Patient', intentQuery: 'Add 1 patient in OPD' },
+      { id: 'alert_help', icon: '⚠️', text: 'What to do?', intentQuery: 'How to fix low stock alert?' },
+      { id: 'chat_admin', icon: '💬', text: 'Ask Admin', intentQuery: 'Send message to admin doctor' }
+    ];
+  }
+
+  // Default Hindi
+  return [
+    { id: 'stock_check', icon: '📦', text: 'स्टॉक देखो', intentQuery: 'पैरासिटामॉल कितना बचा है?' },
+    { id: 'patient_add', icon: '🚶', text: 'मरीज जोड़ो', intentQuery: 'ओपीडी में १ नया मरीज आया' },
+    { id: 'alert_help', icon: '⚠️', text: 'क्या करें?', intentQuery: 'कम स्टॉक का क्या करें?' },
+    { id: 'chat_admin', icon: '💬', text: 'डॉक्टर से पूछें', intentQuery: 'डॉक्टर साहब को मैसेज भेजें' }
+  ];
+}
+
 /**
- * Lightweight Intent Classifier for Voice Inputs
+ * Split Admin Reply Text into short bubbles capped at 15 words each
+ */
+export function splitAdminReplyText(text, maxWords = 15) {
+  if (!text) return [];
+  const words = text.split(/\s+/);
+  const chunks = [];
+
+  for (let i = 0; i < words.length; i += maxWords) {
+    chunks.push(words.slice(i, i + maxWords).join(' '));
+  }
+
+  return chunks;
+}
+
+/**
+ * Intent Classifier for Voice and Chip Queries
  */
 export async function processSaathiIntent(transcript, lang = 'hi') {
   const text = transcript.toLowerCase().trim();
@@ -81,13 +125,22 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
     };
   }
 
+  // 3. INTENT: CHAT_WITH_ADMIN / ESCALATE
+  if (text.includes('डॉक्टर') || text.includes('admin') || text.includes('मैसेज') || text.includes('पुछो') || text.includes('ask')) {
+    return {
+      intent: 'CHAT_WITH_ADMIN',
+      responseText: dict.escalated,
+      needsConfirmation: false
+    };
+  }
+
   // Fetch local DB entities for matching
   const medicines = await db.medicines.where('is_active').equals(1).toArray();
   const stocks = await db.medicine_stock.toArray();
   const departments = await db.departments.toArray();
   const doctors = await db.doctors.where('is_active').equals(1).toArray();
 
-  // 3. INTENT: STOCK_QUERY ("dawai X kitni bachi hai?")
+  // 4. INTENT: STOCK_QUERY ("dawai X kitni bachi hai?")
   const matchedMed = medicines.find(m =>
     text.includes(m.name_en.toLowerCase()) ||
     (m.name_hi && text.includes(m.name_hi.toLowerCase())) ||
@@ -97,7 +150,7 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
     (m.name_en.toLowerCase().includes('cough') && text.includes('cough'))
   );
 
-  if (matchedMed && (text.includes('kitni') || text.includes('kitna') || text.includes('stock') || text.includes('साठा') || text.includes('किती') || text.includes('बची') || text.includes('है'))) {
+  if (matchedMed && (text.includes('kitni') || text.includes('kitna') || text.includes('stock') || text.includes('साठा') || text.includes('किती') || text.includes('बची') || text.includes('है') || text.includes('देखो') || text.includes('पहा'))) {
     const st = stocks.find(s => s.medicine_id === matchedMed.id);
     const qty = st?.quantity || 0;
     const isLow = qty <= matchedMed.threshold;
@@ -118,13 +171,13 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
       responseText,
       matchedMed,
       quantity: qty,
+      picture_url: matchedMed.photo_url,
       needsConfirmation: false
     };
   }
 
-  // 4. INTENT: STOCK_ADD / STOCK_REMOVE
+  // 5. INTENT: STOCK_ADD / STOCK_REMOVE
   if (matchedMed && (text.includes('add') || text.includes('जोड़ो') || text.includes('जोडल्या') || text.includes('दिया') || text.includes('दिले') || text.includes('कम') || text.includes('घटाओ'))) {
-    // Extract number from speech
     const numbers = text.match(/\d+/g);
     const amount = numbers ? parseInt(numbers[0]) : 5;
     const isDecrease = text.includes('दिया') || text.includes('दिले') || text.includes('कम') || text.includes('घटाओ') || text.includes('remove');
@@ -140,13 +193,14 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
         type: 'stock_write',
         medicine: matchedMed,
         delta: delta,
-        reason: 'voice_adjustment'
+        reason: 'chat_adjustment'
       },
+      picture_url: matchedMed.photo_url,
       needsConfirmation: true
     };
   }
 
-  // 5. INTENT: FOOTFALL_ADD ("OPD mein 5 patient aur aaye")
+  // 6. INTENT: FOOTFALL_ADD ("OPD mein 5 patient aur aaye")
   const matchedDept = departments.find(d =>
     text.includes(d.name_en.toLowerCase()) ||
     text.includes(d.name_hi.toLowerCase()) ||
@@ -155,7 +209,7 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
     (text.includes('टीकाकरण') && d.id.includes('imm'))
   );
 
-  if (matchedDept && (text.includes('patient') || text.includes('मरीज') || text.includes('रुग्ण') || text.includes('aaye') || text.includes('आले'))) {
+  if (matchedDept && (text.includes('patient') || text.includes('मरीज') || text.includes('रुग्ण') || text.includes('aaye') || text.includes('आले') || text.includes('jodo') || text.includes('जोडो'))) {
     const numbers = text.match(/\d+/g);
     const count = numbers ? parseInt(numbers[0]) : 1;
     const deptName = lang === 'mr' ? matchedDept.name_mr : lang === 'hi' ? matchedDept.name_hi : matchedDept.name_en;
@@ -174,7 +228,7 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
     };
   }
 
-  // 6. INTENT: ATTENDANCE_MARK ("Dr. Sandeep present mark karo")
+  // 7. INTENT: ATTENDANCE_MARK ("Dr. Sandeep present mark karo")
   const matchedDoc = doctors.find(doc => text.includes(doc.full_name.toLowerCase()) || text.includes(doc.full_name.split(' ')[1]?.toLowerCase() || '---'));
 
   if (matchedDoc && (text.includes('present') || text.includes('absent') || text.includes('उपस्थित') || text.includes('अनुपस्थित') || text.includes('हजर') || text.includes('गैरहजर'))) {
@@ -191,11 +245,21 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
         doctor: matchedDoc,
         status: status
       },
+      picture_url: matchedDoc.photo_url,
       needsConfirmation: true
     };
   }
 
-  // 7. INTENT: HELP / TRAINING ("kaise karte hain?")
+  // 8. INTENT: ALERT_EXPLAIN
+  if (text.includes('kya karein') || text.includes('क्या करें') || text.includes('काय करावे') || text.includes('alert')) {
+    return {
+      intent: 'ALERT_EXPLAIN',
+      responseText: dict.alert_explain_low,
+      needsConfirmation: false
+    };
+  }
+
+  // 9. INTENT: HELP / TRAINING ("kaise karte hain?")
   if (text.includes('help') || text.includes('kaise') || text.includes('कैसे') || text.includes('कसे') || text.includes('मदत')) {
     return {
       intent: 'HELP_TRAINING',
@@ -204,22 +268,65 @@ export async function processSaathiIntent(transcript, lang = 'hi') {
     };
   }
 
-  // Fallback: General Stock / Help Query
+  // Fallback
   return {
     intent: 'UNKNOWN_FALLBACK',
-    responseText: lang === 'mr' ? 'माफ करा, मी समजलो नाही. कृपया पुन्हा बोला किंवा स्क्रीन वापरा.' : lang === 'hi' ? 'क्षमा करें, मैं समझ नहीं पाया। कृपया दोबारा बोलें या बटन का उपयोग करें।' : 'Sorry, I did not catch that. Please speak again or tap buttons.',
+    responseText: lang === 'mr' ? 'माफ करा, मी समजलो नाही. कृपया चिप निवडा किंवा बोला.' : lang === 'hi' ? 'क्षमा करें, मैं समझ नहीं पाया। कृपया नीचे दी गई चिप्स चुनें या दोबारा बोलें।' : 'Sorry, I did not catch that. Tap a quick reply chip or speak again.',
     needsConfirmation: false
   };
 }
 
-/**
- * Log intent interaction into chat_logs table (DPDP Compliant - audio is NOT stored)
- */
+export const EMERGENCY_NUMBERS = {
+  ambulance: '108',
+  helpline: '104',
+  emergency: '112'
+};
+
+export async function processVoiceIntent(transcript, { role = 'worker', lang = 'hi' } = {}) {
+  const result = await processSaathiIntent(transcript, lang);
+
+  let confirmAction = null;
+  if (result.needsConfirmation && result.pendingAction) {
+    if (result.pendingAction.type === 'stock_write') {
+      confirmAction = {
+        type: 'STOCK_UPDATE',
+        medicine: result.pendingAction.medicine?.name_en || 'Medicine',
+        change: result.pendingAction.delta
+      };
+    } else if (result.pendingAction.type === 'footfall_write') {
+      confirmAction = {
+        type: 'FOOTFALL_ADD',
+        count: result.pendingAction.count
+      };
+    }
+  }
+
+  if (result.intent === 'CHAT_WITH_ADMIN' || result.intent === 'UNKNOWN_FALLBACK') {
+    if (result.intent === 'UNKNOWN_FALLBACK') {
+      confirmAction = {
+        type: 'ESCALATE_ADMIN'
+      };
+    }
+  }
+
+  let intentType = result.intent;
+  if (result.intent === 'EMERGENCY_RESCUE') intentType = 'EMERGENCY';
+  if (result.intent === 'MEDICAL_SAFETY_REDIRECT') intentType = 'MEDICAL_BLOCKED';
+
+  return {
+    intent: intentType,
+    text_body: result.responseText,
+    picture_url: result.picture_url || null,
+    tally_dots: result.quantity || (result.pendingAction?.count || 0),
+    confirm_action: confirmAction
+  };
+}
+
 export async function logSaathiInteraction(intent, inputText, responseKey) {
   try {
     await db.chat_logs.add({
       id: `chat-${Date.now()}`,
-      user_id: 'user-kamla-01',
+      user_id: 'user-modi-01',
       phc_id: DEFAULT_PHC_ID,
       intent: intent,
       input_text: inputText || '',
@@ -230,3 +337,4 @@ export async function logSaathiInteraction(intent, inputText, responseKey) {
     console.warn('Chat log write exception:', err);
   }
 }
+

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Pill, Footprints, UserCheck, Volume2, ShieldAlert } from 'lucide-react';
+import { Home, Pill, Footprints, UserCheck, Volume2, ShieldAlert, MessageSquare } from 'lucide-react';
 import { speakText, triggerHaptic } from '../utils/audioEngine';
 
 export default function FloatingDock({ lang, activeModule, setActiveModule, setRole }) {
@@ -43,6 +43,15 @@ export default function FloatingDock({ lang, activeModule, setActiveModule, setR
         <UserCheck size={24} />
       </button>
 
+      <button
+        className={`dock-item ${activeModule === 'chat' ? 'active' : ''}`}
+        onClick={() => handleDockTap('chat', 'PHC साथी चैट')}
+        title="PHC Saathi Chat"
+        style={{ color: '#0d9488' }}
+      >
+        <MessageSquare size={24} />
+      </button>
+
       <div className="dock-divider" />
 
       <button
@@ -58,3 +67,4 @@ export default function FloatingDock({ lang, activeModule, setActiveModule, setR
     </div>
   );
 }
+

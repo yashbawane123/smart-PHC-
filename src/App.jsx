@@ -12,6 +12,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AnalyticsCharts from './components/AnalyticsCharts';
 import FloatingDock from './components/FloatingDock';
 import PHCSaathiAssistant from './components/PHCSaathiAssistant';
+import { ChatScreen } from './components/ChatScreen';
 import { Globe } from 'lucide-react';
 
 export default function App() {
@@ -148,6 +149,16 @@ export default function App() {
             <AdminDashboard
               lang={lang}
               onBack={() => setActiveModule('home')}
+            />
+          )}
+
+          {activeModule === 'chat' && (
+            <ChatScreen
+              user={{ id: 'user-001', role: role, phc_id: 'phc-001' }}
+              phcData={{ name: 'Smart PHC Sub-Center' }}
+              lang={lang}
+              onBack={() => setActiveModule('home')}
+              onNavigate={(mod) => setActiveModule(mod)}
             />
           )}
         </div>
