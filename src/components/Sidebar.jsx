@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Pill, Footprints, UserCheck, ShieldAlert, Globe, Sun, Moon, Wifi, WifiOff, Volume2, MessageSquare } from 'lucide-react';
+import { Home, Pill, Footprints, UserCheck, ShieldAlert, Globe, Sun, Moon, Wifi, WifiOff, Volume2, MessageSquare, Compass } from 'lucide-react';
 import { speakText, triggerHaptic } from '../utils/audioEngine';
 
 export default function Sidebar({
@@ -62,6 +62,15 @@ export default function Sidebar({
         >
           <Home size={22} />
           <span>{lang === 'mr' ? 'मुख्य स्क्रीन' : lang === 'hi' ? 'मुख्य स्क्रीन' : 'Home Dashboard'}</span>
+        </button>
+
+        <button
+          className={`sidebar-nav-btn ${activeModule === 'care_nav' ? 'active' : ''}`}
+          style={{ borderColor: activeModule === 'care_nav' ? 'var(--color-primary)' : 'transparent' }}
+          onClick={() => handleNavClick('care_nav', 'केयर नेविगेशन')}
+        >
+          <Compass size={22} color="var(--color-primary)" />
+          <span>🧭 {lang === 'mr' ? 'केअर नॅव्हिगेशन' : lang === 'hi' ? 'केयर नेविगेशन' : 'Care Navigation'}</span>
         </button>
 
         <button

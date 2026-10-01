@@ -16,7 +16,11 @@ db.version(1).stores({
   sync_queue: '++id, table_name, action, payload, created_at',
   chat_logs: 'id, user_id, phc_id, intent, input_text, response_key, created_at',
   chat_sessions: 'id, phc_id, user_id, channel, created_at',
-  chat_messages: 'id, session_id, sender_role, input_mode, intent, text_body, response_key, picture_url, created_at'
+  chat_messages: 'id, session_id, sender_role, input_mode, intent, text_body, response_key, picture_url, created_at',
+  patients: 'id, name, phone, village, synced',
+  patient_documents: 'id, patient_id, doc_type, status, uploaded_at, synced',
+  patient_timeline_events: 'id, patient_id, event_date, event_type, source_type, confirmed_by_human, source_document_id, synced',
+  follow_ups: 'id, patient_id, due_date, status, related_event_id, synced'
 });
 
 export const DEFAULT_PHC_ID = 'phc-001-maharashtra';
@@ -366,6 +370,182 @@ export async function seedInitialData() {
       }
     ]);
 
+    // Seed Demo Patient: Ramesh Kumar
+    const rameshId = '11111111-1111-4111-a111-111111111111';
+    const docReportId = '22222222-2222-4222-a222-222222222221';
+    const docRxId = '22222222-2222-4222-a222-222222222222';
+    const docAppId = '22222222-2222-4222-a222-222222222223';
+
+    await db.patients.add({
+      id: rameshId,
+      name: 'Ramesh Kumar',
+      age: 52,
+      gender: 'Male',
+      phone: '98XXXXXX01',
+      village: 'Rampur',
+      created_at: new Date().toISOString(),
+      synced: 1
+    });
+
+    await db.patient_documents.bulkAdd([
+      {
+        id: docReportId,
+        patient_id: rameshId,
+        file_url: 'demo://documents/blood_report_02sep2026.pdf',
+        doc_type: 'report',
+        extracted_text: 'Blood Test Report, 02 Sep 2026: HbA1c 8.2% (written normal range 4-5.6), Fasting glucose 142 mg/dL',
+        status: 'done',
+        uploaded_at: '2026-09-02T09:30:00.000Z',
+        synced: 1
+      },
+      {
+        id: docRxId,
+        patient_id: rameshId,
+        file_url: 'demo://documents/prescription_05sep2026.jpg',
+        doc_type: 'prescription',
+        extracted_text: 'Dr. Anita Desai, 05 Sep 2026: Tab Metformin 500mg BD x 30 days, advised HbA1c repeat after 3 months',
+        status: 'done',
+        uploaded_at: '2026-09-05T11:15:00.000Z',
+        synced: 1
+      },
+      {
+        id: docAppId,
+        patient_id: rameshId,
+        file_url: 'demo://documents/appointment_05oct2026.png',
+        doc_type: 'appointment',
+        extracted_text: 'PHC follow-up appointment slip, 05 Oct 2026, 10:00 AM, bring previous reports',
+        status: 'done',
+        uploaded_at: '2026-09-05T11:30:00.000Z',
+        synced: 1
+      }
+    ]);
+
+    await db.patient_timeline_events.bulkAdd([
+      {
+        id: '33333333-3333-4333-a333-333333333331',
+        patient_id: rameshId,
+        event_date: '2026-09-02',
+        event_type: 'test',
+        title: 'HbA1c test',
+        details: 'HbA1c 8.2% (ref 4-5.6)',
+        source_type: 'fact',
+        confidence: 1.0,
+        confirmed_by_human: true,
+        source_document_id: docReportId,
+        created_at: '2026-09-02T09:35:00.000Z',
+        synced: 1
+      },
+      {
+        id: '33333333-3333-4333-a333-333333333332',
+        patient_id: rameshId,
+        event_date: '2026-09-02',
+        event_type: 'test',
+        title: 'Fasting glucose',
+        details: '142 mg/dL',
+        source_type: 'fact',
+        confidence: 1.0,
+        confirmed_by_human: true,
+        source_document_id: docReportId,
+        created_at: '2026-09-02T09:36:00.000Z',
+        synced: 1
+      },
+      {
+        id: '33333333-3333-4333-a333-333333333333',
+        patient_id: rameshId,
+        event_date: '2026-09-05',
+        event_type: 'prescription',
+        title: 'Metformin 500mg',
+        details: 'BD x 30 days, prescribed by Dr. Anita Desai',
+        source_type: 'fact',
+        confidence: 1.0,
+        confirmed_by_human: true,
+        source_document_id: docRxId,
+        created_at: '2026-09-05T11:20:00.000Z',
+        synced: 1
+      },
+      {
+        id: '33333333-3333-4333-a333-333333333334',
+        patient_id: rameshId,
+        event_date: '2026-09-05',
+        event_type: 'appointment',
+        title: 'PHC Consultation',
+        details: 'With Dr. Anita Desai',
+        source_type: 'fact',
+        confidence: 1.0,
+        confirmed_by_human: true,
+        source_document_id: docRxId,
+        created_at: '2026-09-05T11:22:00.000Z',
+        synced: 1
+      },
+      {
+        id: '33333333-3333-4333-a333-333333333335',
+        patient_id: rameshId,
+        event_date: '2026-09-05',
+        event_type: 'diagnosis_note',
+        title: 'Possible diabetes management case',
+        details: 'HbA1c above range on report — chronic condition follow-up may be needed',
+        source_type: 'assumption',
+        confidence: 0.7,
+        confirmed_by_human: false,
+        source_document_id: docRxId,
+        created_at: '2026-09-05T11:25:00.000Z',
+        synced: 1
+      },
+      {
+        id: '33333333-3333-4333-a333-333333333336',
+        patient_id: rameshId,
+        event_date: '2026-09-05',
+        event_type: 'test',
+        title: 'HbA1c repeat pending',
+        details: 'Prescription advises repeat after 3 months — result document not yet in records',
+        source_type: 'assumption',
+        confidence: 0.9,
+        confirmed_by_human: false,
+        source_document_id: docRxId,
+        created_at: '2026-09-05T11:26:00.000Z',
+        synced: 1
+      },
+      {
+        id: '33333333-3333-4333-a333-333333333337',
+        patient_id: rameshId,
+        event_date: '2026-10-05',
+        event_type: 'appointment',
+        title: 'PHC Follow-up',
+        details: '10:00 AM, bring previous reports',
+        source_type: 'fact',
+        confidence: 1.0,
+        confirmed_by_human: true,
+        source_document_id: docAppId,
+        created_at: '2026-09-05T11:35:00.000Z',
+        synced: 1
+      }
+    ]);
+
+    await db.follow_ups.bulkAdd([
+      {
+        id: '44444444-4444-4444-a444-444444444441',
+        patient_id: rameshId,
+        title: 'HbA1c repeat due (ordered 05 Sep)',
+        due_date: '2026-12-05',
+        status: 'pending',
+        related_event_id: '33333333-3333-4333-a333-333333333336',
+        created_at: '2026-09-05T11:30:00.000Z',
+        synced: 1
+      },
+      {
+        id: '44444444-4444-4444-a444-444444444442',
+        patient_id: rameshId,
+        title: 'Follow-up appointment: PHC Follow-up',
+        due_date: '2026-10-05',
+        status: 'pending',
+        related_event_id: '33333333-3333-4333-a333-333333333337',
+        created_at: '2026-09-05T11:35:00.000Z',
+        synced: 1
+      }
+    ]);
+
     console.log('Smart PHC database seeded successfully.');
   }
 }
+
+

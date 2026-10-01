@@ -13,6 +13,8 @@ import AnalyticsCharts from './components/AnalyticsCharts';
 import FloatingDock from './components/FloatingDock';
 import PHCSaathiAssistant from './components/PHCSaathiAssistant';
 import { ChatScreen } from './components/ChatScreen';
+import CareNavScreen from './components/CareNavScreen';
+import FollowUpNotificationBanner from './components/FollowUpNotificationBanner';
 import { Globe } from 'lucide-react';
 
 export default function App() {
@@ -103,6 +105,9 @@ export default function App() {
           setActiveModule={setActiveModule}
         />
 
+        {/* Top Dismissible Follow-Up Notification Banner */}
+        <FollowUpNotificationBanner lang={lang} />
+
         {/* View Router */}
         <div style={{ flex: 1, paddingBottom: '80px' }}>
           {activeModule === 'language_gate' && (
@@ -122,6 +127,13 @@ export default function App() {
               />
               <AnalyticsCharts lang={lang} />
             </>
+          )}
+
+          {activeModule === 'care_nav' && (
+            <CareNavScreen
+              lang={lang}
+              onBack={() => setActiveModule('home')}
+            />
           )}
 
           {activeModule === 'stock' && (

@@ -1,5 +1,5 @@
 import { db } from '../db/offlineDb';
-import { invokeSupabaseRPC } from './supabaseClient';
+import { invokeSupabaseRPC, upsertSupabaseTable } from './supabaseClient';
 
 export class SyncEngine {
   constructor() {
@@ -43,7 +43,20 @@ export class SyncEngine {
       const unsyncedMovements = await db.stock_movements.where('synced').equals(0).count();
       const unsyncedFootfall = await db.patient_footfall.where('synced').equals(0).count();
       const unsyncedAttendance = await db.doctor_attendance.where('synced').equals(0).count();
-      return unsyncedMovements + unsyncedFootfall + unsyncedAttendance;
+      const unsyncedPatients = await db.patients.where('synced').equals(0).count();
+      const unsyncedDocs = await db.patient_documents.where('synced').equals(0).count();
+      const unsyncedEvents = await db.patient_timeline_events.where('synced').equals(0).count();
+      const unsyncedFollowUps = await db.follow_ups.where('synced').equals(0).count();
+
+      return (
+        unsyncedMovements +
+        unsyncedFootfall +
+        unsyncedAttendance +
+        unsyncedPatients +
+        unsyncedDocs +
+        unsyncedEvents +
+        unsyncedFollowUps
+      );
     } catch {
       return 0;
     }
@@ -75,7 +88,7 @@ export class SyncEngine {
       for (const f of pendingFootfall) {
         const res = await invokeSupabaseRPC('increment_footfall', {
           p_department_id: f.department_id,
-          p_phC_id: f.phc_id,
+          p_phc_id: f.phc_id,
           p_delta: f.count,
           p_user: 'system'
         });
@@ -90,6 +103,42 @@ export class SyncEngine {
         await db.doctor_attendance.update(a.id, { synced: 1 });
       }
 
+      // 4. Sync Patients
+      const pendingPatients = await db.patients.where('synced').equals(0).toArray();
+      for (const p of pendingPatients) {
+        const res = await upsertSupabaseTable('patients', p);
+        if (res.success) {
+          await db.patients.update(p.id, { synced: 1 });
+        }
+      }
+
+      // 5. Sync Patient Documents
+      const pendingDocs = await db.patient_documents.where('synced').equals(0).toArray();
+      for (const d of pendingDocs) {
+        const res = await upsertSupabaseTable('patient_documents', d);
+        if (res.success) {
+          await db.patient_documents.update(d.id, { synced: 1 });
+        }
+      }
+
+      // 6. Sync Timeline Events
+      const pendingEvents = await db.patient_timeline_events.where('synced').equals(0).toArray();
+      for (const e of pendingEvents) {
+        const res = await upsertSupabaseTable('patient_timeline_events', e);
+        if (res.success) {
+          await db.patient_timeline_events.update(e.id, { synced: 1 });
+        }
+      }
+
+      // 7. Sync Follow-ups
+      const pendingFollowUps = await db.follow_ups.where('synced').equals(0).toArray();
+      for (const f of pendingFollowUps) {
+        const res = await upsertSupabaseTable('follow_ups', f);
+        if (res.success) {
+          await db.follow_ups.update(f.id, { synced: 1 });
+        }
+      }
+
     } catch (err) {
       console.warn('Sync process background exception:', err);
     } finally {
@@ -100,3 +149,4 @@ export class SyncEngine {
 }
 
 export const syncEngine = new SyncEngine();
+

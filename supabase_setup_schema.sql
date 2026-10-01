@@ -167,3 +167,69 @@ create policy "public_all_stock" on medicine_stock for all using (true);
 create policy "public_all_movements" on stock_movements for all using (true);
 create policy "public_all_footfall" on patient_footfall for all using (true);
 create policy "public_all_attendance" on doctor_attendance for all using (true);
+
+-- 7. Patient Health Record & AI Document Schema
+create table if not exists patients (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  age int check (age >= 0),
+  gender text check (gender in ('Male','Female','Other')),
+  phone text,
+  village text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists patient_documents (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references patients(id) on delete cascade,
+  file_url text,
+  doc_type text check (doc_type in ('report','prescription','appointment','note')),
+  extracted_text text,
+  status text not null default 'pending' check (status in ('pending','extracting','done','error')),
+  uploaded_at timestamptz not null default now()
+);
+
+create table if not exists patient_timeline_events (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references patients(id) on delete cascade,
+  event_date date not null default current_date,
+  event_type text check (event_type in ('test','prescription','appointment','diagnosis_note')),
+  title text not null,
+  details text,
+  source_type text not null check (source_type in ('fact','assumption')),
+  confidence numeric default 1 check (confidence >= 0 and confidence <= 1),
+  confirmed_by_human boolean not null default false,
+  source_document_id uuid references patient_documents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists follow_ups (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references patients(id) on delete cascade,
+  title text not null,
+  due_date date,
+  status text not null default 'pending' check (status in ('pending','done','missed')),
+  related_event_id uuid references patient_timeline_events(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- 8. Storage Bucket for Patient Documents
+insert into storage.buckets (id, name, public)
+values ('patient-docs', 'patient-docs', true)
+on conflict (id) do nothing;
+
+create policy "Public Access patient-docs" on storage.objects for select using (bucket_id = 'patient-docs');
+create policy "Public Upload patient-docs" on storage.objects for insert with check (bucket_id = 'patient-docs');
+create policy "Public Update patient-docs" on storage.objects for update using (bucket_id = 'patient-docs');
+
+-- 9. Enable RLS for New Tables
+alter table patients enable row level security;
+alter table patient_documents enable row level security;
+alter table patient_timeline_events enable row level security;
+alter table follow_ups enable row level security;
+
+create policy "public_all_patients" on patients for all using (true);
+create policy "public_all_patient_documents" on patient_documents for all using (true);
+create policy "public_all_patient_timeline_events" on patient_timeline_events for all using (true);
+create policy "public_all_follow_ups" on follow_ups for all using (true);
+

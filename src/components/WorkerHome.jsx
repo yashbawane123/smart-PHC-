@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pill, UserCheck, Footprints, AlertTriangle, ChevronRight, Volume2, MessageSquare } from 'lucide-react';
+import { Pill, UserCheck, Footprints, AlertTriangle, ChevronRight, Volume2, MessageSquare, Compass } from 'lucide-react';
 import { db } from '../db/offlineDb';
 import { speakText, VOICE_DICTIONARY, triggerHaptic } from '../utils/audioEngine';
 
@@ -82,6 +82,22 @@ export default function WorkerHome({ lang, onSelectModule }) {
           </div>
         </div>
       )}
+
+      {/* Module 0: Care Navigation AI Agent */}
+      <div
+        className="module-tile footfall"
+        style={{ borderColor: 'var(--color-primary)', background: 'linear-gradient(135deg, #FFFFFF 60%, #E0F2FE 100%)' }}
+        onClick={() => handleTileClick('care_nav', 'care_nav_module')}
+      >
+        <div className="module-icon-box" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
+          <Compass size={48} />
+        </div>
+        <div className="module-info">
+          <h2>🧭 {lang === 'mr' ? 'केअर नॅव्हिगेशन' : lang === 'hi' ? 'केयर नेविगेशन' : 'Care Navigation'}</h2>
+          <p>{lang === 'mr' ? 'कागदपत्रे अपलोड करा व माहिती तपासा' : lang === 'hi' ? 'मेडिकल रिकॉर्ड व AI एक्सट्रैक्शन' : 'AI Medical Records & Timeline'}</p>
+        </div>
+        <ChevronRight size={32} color="var(--color-primary)" />
+      </div>
 
       {/* Module 1: Medicine Stock */}
       <div
